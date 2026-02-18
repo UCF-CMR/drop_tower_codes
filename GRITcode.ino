@@ -33,12 +33,19 @@
 //  - Serial.print() the software name and version number in setup()
 //  - Added visible (LED) end-state behavior. If you see this pattern, you know
 //    that the Arduino believes the solenoid fired
+//
+//v1.1.2
+//17 February 2026
+//Brandon Doyle
+//Modification:
+//  - Edge detection: Added debouncing
 
-const char softwareVersion[] = "v1.1.1";
+const char softwareVersion[] = "v1.1.2";
 
 //Macros for detecing signal rising/falling edges.
-//#define RE(signal, state) ((state=(state<<1)|(signal&1))&3)==1 //Rising edge. Unused. Uncomment if needed.
-#define FE(signal, state) ((state=(state<<1)|(signal&1))&3)==2   //Falling edge.
+//2 bytes of debouncing: RE fires on 00001111, FE fires on 11110000
+//#define RE(signal, state) ((state=(state<<1)|(signal&1)))==0x0F //Rising edge. Unused. Uncomment if needed.
+#define FE(signal, state) ((state=(state<<1)|(signal&1)))==0xF0   //Falling edge.
 
 //Pin assignments
 
@@ -55,26 +62,26 @@ int contact_pin_LED = 3;
 
 // Brandon moved these out of the loop:
 bool ARMED_LOGIC   = false;
-bool CONTACT_LOGIC = false;
+byte CONTACT_LOGIC = false;
 
 //Pattern plays on the LEDs so you know the Arduino
 //believes the solenoid fired:
 void end_state_LED_pattern(){
   digitalWrite(contact_pin_LED,  LOW);
   digitalWrite(armed_pin_LED,   HIGH);
-  delay(50);
+  delay(100);
   digitalWrite(contact_pin_LED, HIGH);
-  digitalWrite(armed_pin_LED,    LOW);
-  delay(50);
-  digitalWrite(contact_pin_LED,  LOW);
-  digitalWrite(armed_pin_LED,   HIGH);
-  delay(50);
-  digitalWrite(contact_pin_LED, HIGH);
-  digitalWrite(armed_pin_LED,    LOW);
-  delay(50);
-  digitalWrite(contact_pin_LED,  LOW);
   digitalWrite(armed_pin_LED,    LOW);
   delay(100);
+  digitalWrite(contact_pin_LED,  LOW);
+  digitalWrite(armed_pin_LED,   HIGH);
+  delay(100);
+  digitalWrite(contact_pin_LED, HIGH);
+  digitalWrite(armed_pin_LED,    LOW);
+  delay(100);
+  digitalWrite(contact_pin_LED,  LOW);
+  digitalWrite(armed_pin_LED,    LOW);
+  delay(500);
 }
 
 void setup() {
@@ -110,7 +117,7 @@ void setup() {
 void loop() {
     // Read armed and contact logic
   ARMED_LOGIC   = digitalRead(armed_pin_sig);
-  CONTACT_LOGIC = digitalRead(contact_pin_sig); //This is still okay even with my edits because we're not in the while loop yet. -Brandon
+  CONTACT_LOGIC = digitalRead(contact_pin_sig);
 
     // Show Logic by print and LED
   Serial.print("Armed Logic:");
@@ -136,16 +143,30 @@ void loop() {
        ARMED_LOGIC   = digitalRead(armed_pin_sig);
        //CONTACT_LOGIC = digitalRead(contact_pin_sig);  //Now handled in Falling Edge detection -Brandon
 
+      //For debugging falling edge detection: 
+      // for(int i=8;i--;i>=0){
+      //   Serial.print(bitRead(CONTACT_LOGIC,i));
+      // }
+      // Serial.print("   ");
+      // Serial.println(CONTACT_LOGIC==0xF0);
+
        digitalWrite(armed_pin_LED,  HIGH);
-       
        // Falling event: triggers on falling edge (hehe) of signal from contact_pin_sig
        if( FE(digitalRead(contact_pin_sig),CONTACT_LOGIC) ){ // FE() stores current state and checks for falling edge
               //Activating Launcher
             delay(50);
-            digitalWrite(relay_pin_out,   HIGH); 
+            digitalWrite(relay_pin_out,   HIGH);
+
+            //For debugging falling edge detection:
+            // for(int i=8;i--;i>=0){
+            //   Serial.print(bitRead(CONTACT_LOGIC,i));
+            // }
+            // Serial.print("   ");
+            // Serial.println(CONTACT_LOGIC==0xF0);
+            
             Serial.print("### Firing Solenoid ### \n");
             //Pulse length
-            delay(150);
+            delay(250);
             digitalWrite(relay_pin_out, LOW);
 
             //delay(240000);   // 4 min cooldown (enough time to turn off the arm or power switch)
