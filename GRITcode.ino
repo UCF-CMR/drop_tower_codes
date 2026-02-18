@@ -1,7 +1,9 @@
 //GRIT code
+//v1.0.0
 //Wesley Chambers
 //20 July 2018
 //
+//v1.1.0
 //29 September 2025
 //Modification by Brandon Doyle:
 //  - Falling event now triggers on falling edge of contact_pin_sig, not
@@ -10,11 +12,33 @@
 //  - 4 minute cooldown replaced with infinite while loop. Is there a reason
 //    we were letting GRIT reset itself? Maybe there is and I just haven't
 //    thought of it! But if not, let's not let it do that, IMO.
+//
+//v1.1.1
+//16 February 2026
+//Brandon Doyle
+//Bug fix:
+//  - Parentheses corrected in FE and RE macros
+//Modifications:
+//  - Introduced version numbers.
+//      Convention: v[GRIT version].[campaign].[software version]
+//      -> GRIT version meaning the experiment version. We have a GRIT 2 planned.
+//         We will save v2.0.0 for the initial software for that experiment.
+//      -> Increment campaign # as sets of projects come and go. v1.1.x will
+//         be Kayla Schang's big push in 2025 and 2026. I have no interest in playing
+//         historian and figuring out what number we should really be on by now xD
+//      Retroactively name:
+//      -> v1.0.0: Wesley's version
+//      -> v1.1.0: my September 29 version
+//      -> v1.1.1: this version, Feb 2026
+//  - Serial.print() the software name and version number in setup()
+//  - Added visible (LED) end-state behavior. If you see this pattern, you know
+//    that the Arduino believes the solenoid fired
 
+const char softwareVersion[] = "v1.1.1";
 
-//Macros for detecing signal rising/falling edges. Added by Brandon.
-//#define RE(signal, state) (state=(state<<1)|(signal&1)&3)==1 //Rising edge. Unused. Uncomment if needed.
-#define FE(signal, state) (state=(state<<1)|(signal&1)&3)==2   //Falling edge.
+//Macros for detecing signal rising/falling edges.
+//#define RE(signal, state) ((state=(state<<1)|(signal&1))&3)==1 //Rising edge. Unused. Uncomment if needed.
+#define FE(signal, state) ((state=(state<<1)|(signal&1))&3)==2   //Falling edge.
 
 //Pin assignments
 
@@ -33,7 +57,25 @@ int contact_pin_LED = 3;
 bool ARMED_LOGIC   = false;
 bool CONTACT_LOGIC = false;
 
-
+//Pattern plays on the LEDs so you know the Arduino
+//believes the solenoid fired:
+void end_state_LED_pattern(){
+  digitalWrite(contact_pin_LED,  LOW);
+  digitalWrite(armed_pin_LED,   HIGH);
+  delay(50);
+  digitalWrite(contact_pin_LED, HIGH);
+  digitalWrite(armed_pin_LED,    LOW);
+  delay(50);
+  digitalWrite(contact_pin_LED,  LOW);
+  digitalWrite(armed_pin_LED,   HIGH);
+  delay(50);
+  digitalWrite(contact_pin_LED, HIGH);
+  digitalWrite(armed_pin_LED,    LOW);
+  delay(50);
+  digitalWrite(contact_pin_LED,  LOW);
+  digitalWrite(armed_pin_LED,    LOW);
+  delay(100);
+}
 
 void setup() {
   // put your setup code here, to run once:
@@ -60,6 +102,9 @@ void setup() {
   digitalWrite(contact_pin_LED, HIGH);
 
   Serial.begin(9600);
+  Serial.print(F("GRIT code "));
+  Serial.println(softwareVersion);
+  Serial.println(F(" "));
 }
 
 void loop() {
@@ -104,7 +149,9 @@ void loop() {
             digitalWrite(relay_pin_out, LOW);
 
             //delay(240000);   // 4 min cooldown (enough time to turn off the arm or power switch)
-            while(true);       // infinity min cooldown. Just Brandon's suggestion, take or leave :)
+            while(true){       // infinity min cooldown.
+              end_state_LED_pattern(); //Add specific end state patern
+            }
     }
   } 
   
