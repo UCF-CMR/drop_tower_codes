@@ -47,7 +47,7 @@
 //  - Spacing changed so I stop getting confused
 //  - Make contact LED blink when armed and unconnected
 
-const char softwareVersion[] = "v1.1.2";
+const char softwareVersion[] = "v1.1.3";
 
 //Macros for detecing signal rising/falling edges.
 //2 bytes of debouncing: RE fires on 00001111, FE fires on 11110000
@@ -65,7 +65,11 @@ int contact_pin_sig = 10;
 int contact_pin_gnd = 9;
 
 int armed_pin_LED = 4;
+int armed_LED_state = 0;
 int contact_pin_LED = 3;
+int contact_LED_state = 0;
+unsigned long currentMillis = 0;
+unsigned long previousMillis = 0;
 
 // Brandon moved these out of the loop:
 bool ARMED_LOGIC   = false;
@@ -184,6 +188,18 @@ void loop() {
         end_state_LED_pattern(); //Add specific end state patern
       }
     }
-  } 
-  
+    //Handle contact LED blinking:
+    if(CONTACT_LOGIC){ //Solid contact light
+      digitalWrite(contact_pin_LED,  HIGH);
+    }
+    else{ //Blinking contact light
+      currentMillis = millis();
+      if (currentMillis - previousMillis >= 25) {
+        Serial.println("blinkey");
+        previousMillis = currentMillis; // Save last time LED blinked
+        contact_LED_state = (contact_LED_state == LOW) ? HIGH : LOW; // Toggle state
+        digitalWrite(contact_pin_LED, contact_LED_state);
+      }
+    }
+  }
 }
