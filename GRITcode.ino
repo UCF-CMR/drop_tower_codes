@@ -195,7 +195,6 @@ void loop() {
     else{ //Blinking contact light
       currentMillis = millis();
       if (currentMillis - previousMillis >= 25) {
-        Serial.println("blinkey");
         previousMillis = currentMillis; // Save last time LED blinked
         contact_LED_state = (contact_LED_state == LOW) ? HIGH : LOW; // Toggle state
         digitalWrite(contact_pin_LED, contact_LED_state);
@@ -203,3 +202,4 @@ void loop() {
     }
   }
 }
+
